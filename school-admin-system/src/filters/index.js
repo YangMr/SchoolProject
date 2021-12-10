@@ -1,10 +1,10 @@
 /**
- * @author yangling
+ * @author YangLing
  * @date 2021/12/10 9:50 AM
  */
-
-import dayjs from "dayjs"
-import rt from 'dayjs/plugin/relativeTime'
+import Vue from "vue";
+import dayjs from "dayjs";
+import rt from "dayjs/plugin/relativeTime";
 
 /**
  * MethodName 格式化后台返回的时间戳
@@ -12,30 +12,39 @@ import rt from 'dayjs/plugin/relativeTime'
  * @param format
  * @returns {string}
  */
-const dateFilter = (time,format = 'YYYY-MM-DD') =>{
-    if(!isNaN(time)){
-        time = parseInt(time)
-    }
-    return dayjs(time).format(format)
-}
+const dateFilter = (time, format = "YYYY-MM-DD") => {
+  if (!isNaN(time)) {
+    time = parseInt(time);
+  }
+  return dayjs(time).format(format);
+};
 
 // 加载相对时间插件
-dayjs.extend(rt)
+dayjs.extend(rt);
 
 /**
  * MethodName 处理相对时间
  * @param time
  * @returns {string}
  */
-const relativeTime = (time) =>{
-    if(!isNaN(time)){
-        time = parseInt(time)
-    }
-    return dayjs().to(dayjs(time))
-}
+const relativeTime = (time) => {
+  if (!isNaN(time)) {
+    time = parseInt(time);
+  }
+  return dayjs().to(dayjs(time));
+};
 
-export default  {
-    dateFilter,
-    relativeTime
-}
+/**
+ * 格式化后台返回的时间戳
+ */
+Vue.filter("dateFilter", dateFilter);
 
+/**
+ * 处理相对时间
+ */
+Vue.filter("relativeTime", relativeTime);
+
+export default {
+  dateFilter,
+  relativeTime,
+};
