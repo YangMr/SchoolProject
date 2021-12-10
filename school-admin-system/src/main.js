@@ -6,6 +6,9 @@ import router from "./router";
 import store from "./store";
 Vue.use(ElementUI);
 
+import "./assets/css/reset.min.css"
+// import "./assets/css/upload.css"
+
 /**
  * 将封装的日期格式化方法挂载到全局
  */
