@@ -11,7 +11,7 @@ module.exports = {
     open: true,
     proxy: {
       [process.env.VUE_APP_BASE_API]: {
-        target: "http://demonuxtapi.dishait.cn",
+        target: "http://upload.9yuecloud.com:8887",
         changeOrigin: true,
         pathRewrite: {
           ["^" + process.env.VUE_APP_BASE_API]: "",
