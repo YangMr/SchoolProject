@@ -1,42 +1,88 @@
 <template>
-  <div class="upload_container">
-    <h3>单一文件上传「FORM-DATA」</h3>
+  <div>
+    <!--单一文件上传「FORM-DATA」-->
+    <div class="upload_container">
+      <h3>单一文件上传「FORM-DATA」</h3>
 
-    <div class="upload_box">
-      <input id="upload_ipu" @change="getFile" type="file" class="upload_ipu" />
-      <div class="upload_button_group">
-        <button
-          class="upload_button select"
-          :class="uploadStatus ? 'disabled' : ''"
-          @click="selectFile"
-        >
-          选择文件
-        </button>
-        <button
-          class="upload_button upload"
-          :class="uploadStatus ? 'loading' : ''"
-          @click="uploadFile"
-        >
-          上传到文件服务器
-        </button>
+      <div class="upload_box">
+        <input
+          id="upload_ipu"
+          @change="getFile"
+          type="file"
+          class="upload_ipu"
+        />
+        <div class="upload_button_group">
+          <button
+            class="upload_button select"
+            :class="uploadStatus ? 'disabled' : ''"
+            @click="selectFile"
+          >
+            选择文件
+          </button>
+          <button
+            class="upload_button upload"
+            :class="uploadStatus ? 'loading' : ''"
+            @click="uploadFile"
+          >
+            上传到文件服务器
+          </button>
+        </div>
+        <div class="upload_tips" v-if="!showFile">
+          只能上传 PNG/JPG/JPEG 格式图片，且大小不能超过2MB
+        </div>
+        <div class="upload_list" v-if="showFile">
+          <span>文件：{{ file.name }}</span>
+          <span><em @click="removeFile">移除</em></span>
+        </div>
       </div>
-      <div class="upload_tips" v-if="!showFile">
-        只能上传 PNG/JPG/JPEG 格式图片，且大小不能超过2MB
+
+      <div class="image_box" v-if="imgUrl">
+        <img :src="imgUrl" alt="" />
       </div>
-      <div class="upload_list" v-if="showFile">
-        <span>文件：{{ file.name }}</span>
-        <span><em @click="removeFile">移除</em></span>
+    </div>
+    <!--单一文件上传「进度管控」-->
+    <div class="upload_container">
+      <h3>单一文件上传「进度管控」</h3>
+      <div class="upload_box">
+        <input type="file" @change="getFile2" class="upload_ipu2" />
+        <div class="upload_button_group">
+          <button
+            class="upload_button upload_file"
+            :class="uploadProgress == 100 ? 'loading' : ''"
+            @click="selectFile2"
+          >
+            上传文件
+          </button>
+        </div>
+        <div class="progress" v-if="progressStatus">
+          <div
+            class="select_progress"
+            :style="{ width: uploadProgress + '%' }"
+          ></div>
+        </div>
       </div>
     </div>
 
-    <div class="image_box" v-if="imgUrl">
-      <img :src="imgUrl" alt="" />
+    <!--单一文件上传「BASE64」，只适合图片   -->
+    <div class="upload_container">
+      <h3>单一文件上传「BASE64」，只适合图片</h3>
+      <div class="upload_box">
+        <input type="file" @change="getFile3" class="upload_ipu3" />
+        <div class="upload_button_group">
+          <button class="upload_button upload_file2" @click="selectFile3">
+            上传图片
+          </button>
+        </div>
+        <div class="upload_tips">
+          只能上传jpg/png格式图片，且大小不能超过2mb
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import { uploadSingle } from "../api/upload";
+import { uploadSingle, uploadSingleBase64 } from "../api/upload";
 export default {
   name: "Home",
   data: function () {
@@ -45,6 +91,10 @@ export default {
       file: "",
       imgUrl: "",
       uploadStatus: false,
+      progressStatus: false,
+      file2: "",
+      uploadProgress: 0,
+      file3: "",
     };
   },
   methods: {
@@ -100,6 +150,100 @@ export default {
       this.showFile = false;
       this.uploadStatus = false;
     },
+
+
+    //方法做的事情： 拉起选择文件弹窗
+    selectFile2() {
+      const uploadIpu = document.querySelector(".upload_ipu2");
+      uploadIpu.click();
+    },
+    //方法做的事情： 获取选择上传的文件,并将文件进行上传
+    async getFile2(event) {
+      this.file2 = event.target.files["0"];
+      console.log(this.file2);
+
+      //限制上传文件的大小
+      if (this.file2.size > 900 * 1024 * 1024) {
+        this.$message.warning("上传的文件不能大于2MB哦😯");
+        return;
+      }
+
+      //限制上传文件的类型
+      const type = this.file2.type;
+      if (!/(video|PNG|JPG|JPEG|GIF)/i.test(type)) {
+        this.$message.warning("上传的文件类型不正确");
+        return;
+      }
+
+      this.progressStatus = true;
+      //文件上传
+      let formData = new FormData();
+      formData.append("file", this.file2);
+      formData.append("filename", this.file2.name);
+      const res = await uploadSingle(formData, (loaded, total) => {
+        this.uploadProgress = (loaded / total) * 100;
+      });
+      if (res.data.code == 0) {
+        this.$message.success("文件上传成功");
+        this.file2 = "";
+        this.uploadProgress = 0;
+        this.progressStatus = false;
+      }
+    },
+
+
+    //方法做的事情： 拉起选择文件弹窗
+    selectFile3() {
+      const uploadIpu3 = document.querySelector(".upload_ipu3");
+      uploadIpu3.click();
+    },
+    //方法做的事情： 获取选择上传的文件,并将文件进行上传
+    async getFile3(event) {
+      this.file3 = event.target.files["0"];
+
+      //限制上传文件的大小
+      if (this.file3.size > 2 * 1024 * 1024) {
+        this.$message.warning("上传的文件不能大于2MB哦😯");
+        return;
+      }
+
+      //限制上传文件的类型
+      const type = this.file3.type;
+
+      if (!/(PNG|JPG|JPEG|GIF)/i.test(type)) {
+        this.$message.warning("上传的文件类型不正确");
+        return;
+      }
+
+      // 1. 把选择的图片转化成base64格式
+      let base64File = await this.changeBase64(this.file3)
+
+      // console.log(base64File)
+      // 2. 上传的时候要把请求头设置为application/x-www-form-urlencoded
+      const res = await uploadSingleBase64({
+        file :base64File,
+        filename : this.file3.name
+      });
+
+      console.log(res)
+      if(res.data.code == 0){
+        this.$message.success("图片上传成功")
+        this.file3 = ""
+        base64File = ""
+        this.$message.success(res.data.servicePath)
+      }
+
+    },
+    //方法做的事情: 将选择图片转化成base64的数据格式
+    changeBase64(file){
+      return new Promise((resolve)=>{
+        let oFileReader = new FileReader();
+        oFileReader.onload = (e) => {
+          resolve( e.target.result)
+        };
+        oFileReader.readAsDataURL(file);
+      })
+    }
   },
 };
 </script>
@@ -175,5 +319,35 @@ export default {
   top: 0;
   background: #ddd url("../assets/css/loading.gif") no-repeat 10px center;
   z-index: 999;
+}
+.upload_file {
+  background: purple;
+  position: relative;
+}
+.progress {
+  height: 6px;
+  background: #ccc;
+  margin: 10px 0;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+.select_progress {
+  width: 0;
+  height: 100%;
+  transition: width 0.5s;
+  background: green;
+  border-radius: 4px;
+  position: absolute;
+  overflow: hidden;
+}
+.upload_ipu2 {
+  display: none;
+}
+.upload_file2 {
+  background: #409eff;
+}
+.upload_ipu3 {
+  display: none;
 }
 </style>
