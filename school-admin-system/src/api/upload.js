@@ -32,3 +32,19 @@ export const uploadSingleBase64 = (fileData) => {
     data:Qs.stringify(fileData),
   });
 };
+
+/**
+ *
+ * @param fileData type:FormData
+ * @returns {AxiosPromise}
+ */
+export const uploadSingleName = (fileData)=> {
+  return request({
+    url : "/upload_single_name",
+    method : "POST",
+    headers : {
+      "Content-Type" : "multipart/form-data"
+    },
+    data : fileData
+  })
+}

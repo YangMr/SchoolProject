@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="container">
     <!--单一文件上传「FORM-DATA」-->
     <div class="upload_container">
       <h3>单一文件上传「FORM-DATA」</h3>
@@ -105,11 +105,25 @@
         </ul>
       </div>
     </div>
+
+    <!--单一文件上传「缩略图处理」-->
+    <div class="upload_container">
+      <h3>单一文件上传「缩略图处理」</h3>
+      <div class="upload_box">
+        <input type="file" @change="getFile6" id="alum" class="upload_ipu">
+        <div class="upload_button_group">
+          <button class="upload_button select6" @click="selectFile6">选择文件</button>
+          <button class="upload_button upload6" @click="uploadFile6">上传到服务器</button>
+        </div>
+        <img v-if="imgUrl2" :src="imgUrl2" alt="" width="60" height="60">
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import { uploadSingle, uploadSingleBase64 } from "../api/upload";
+import { uploadSingle, uploadSingleBase64,uploadSingleName } from "../api/upload";
+import SparkMD5 from "spark-md5"
 export default {
   name: "Home",
   data: function () {
@@ -123,9 +137,9 @@ export default {
       uploadProgress: 0,
       file3: "",
       file4 : "",
-      selectFiles : [
-        
-      ]
+      selectFiles : [],
+      imgUrl2 : "",
+      file6 : ""
     };
   },
   methods: {
@@ -361,6 +375,62 @@ export default {
       })
 
 
+    },
+
+    //方法做的事情： 拉起选择文件弹窗
+    selectFile6(){
+      let alumb =  document.getElementById("alum")
+      alumb.click()
+    },
+    //方法做的事情： 获取选择上传的文件
+    async getFile6(event){
+      this.file6 = event.target.files["0"]
+      this.imgUrl2 =  await this.changeBase64(this.file6)
+    },
+    //方法做的事情： 将选择的文件上传到服务器
+    async uploadFile6(){
+      if(!this.file6){
+        this.$message.warning("请选择上传的文件")
+        return
+      }
+
+     let {filename} =  await this.changeBuffer(this.file6)
+
+      let formData = new FormData()
+      formData.append("file",this.file6)
+      formData.append("filename",filename)
+
+      const res = await uploadSingleName(formData)
+      console.log(res)
+    },
+    //方法做的事情： 自动生成文件的名称
+    changeBuffer(file){
+      return new Promise((resolve, reject)=>{
+        //1. 实例化FileReader
+        let fileReader = new FileReader();
+
+        //2. 读取选择上传的文件
+        fileReader.readAsArrayBuffer(file);
+
+        //3. 获取到读取的要上传的文件信息
+        fileReader.onload = (event)=>{
+          console.log(event)
+          let buffer = event.target.result
+          let spark = new SparkMD5.ArrayBuffer()
+          let HASH = ""
+          let suffix = ""
+          spark.append(buffer);
+          HASH = spark.end();
+          suffix = /\.([a-zA-Z0-9]+)$/.exec(file.name)[1]
+
+          resolve({
+            buffer,
+            HASH,
+            suffix,
+            filename: `${HASH}.${suffix}`
+          })
+        }
+      })
     }
   },
 };
@@ -368,6 +438,11 @@ export default {
 
 <style scoped>
 *{margin: 0; padding: 0;}
+.container{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
 .upload_container {
   padding: 40px;
 }
@@ -482,10 +557,10 @@ export default {
   color : blueviolet;
   cursor: pointer;
 }
-.select5{
+.select5,.select6{
   background: #409eff;
 }
-.upload5{
+.upload5,.upload6{
   background: #67c23a;
 }
 ul{
@@ -500,5 +575,9 @@ ul li {
 ul li span{
   cursor: pointer;
   color: green;
+}
+h3{
+  margin-bottom: 20px;
+  font-size: 14px;
 }
 </style>
