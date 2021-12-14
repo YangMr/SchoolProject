@@ -48,3 +48,41 @@ export const uploadSingleName = (fileData)=> {
     data : fileData
   })
 }
+
+//获取已经上传的切片
+export const uploadAlready = (HASH)=>{
+  return request({
+    url : "/upload_already",
+    method : "GET",
+    headers : {
+      "Content-Type" : "application/json"
+    },
+    params : {
+      HASH
+    }
+  })
+}
+
+//上传切片
+export const uploadChunk = (fileData)=>{
+  return request({
+    url : "/upload_chunk",
+    method : "POST",
+    headers : {
+      "Content-Type" : "multipart/form-data"
+    },
+    data : fileData
+  })
+}
+
+//合并切片
+export const uploadMerge = (fileData)=>{
+  return request({
+    url : "/upload_merge",
+    method : "POST",
+    headers : {
+      "Content-Type" : "application/x-www-form-urlencoded"
+    },
+    data : Qs.stringify(fileData)
+  })
+}
