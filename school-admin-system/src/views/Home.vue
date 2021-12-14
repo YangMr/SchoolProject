@@ -78,6 +78,33 @@
         </div>
       </div>
     </div>
+
+    <!--拖拽上传-->
+    <div class="upload_container">
+      <h3>拖拽上传</h3>
+      <div class="upload_box upload_center" @dragover.prevent="dropGetFile" @drop.prevent="dropGetFile">
+        <input type="file" @change="getFile4" id="drag_file" class="upload_ipu">
+        <img src="../assets/css/upload.png" width="80px" height="62px">
+        <div class="upload_tips mt5">将文件拖到此处，或<span @click="selectFile4" class="click_upload">点击上传</span></div>
+      </div>
+    </div>
+
+    <!--多文件上传-->
+    <div class="upload_container">
+      <h3>多文件上传</h3>
+      <div class="upload_box">
+        <input type="file" @change="getFile5" id="multiple_file" multiple class="upload_ipu">
+        <div class="upload_button_group">
+          <button class="upload_button select5" @click="selectFile5">选择文件</button>
+          <button class="upload_button upload5" @click="uploadFile5">上传到服务器</button>
+        </div>
+        <ul>
+          <li v-for="(item,index) in selectFiles" :key="index">
+            文件{{index}} : {{item.name}}  <span @click="handleRemoveFile(index)">移除</span>
+          </li>
+        </ul>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -95,6 +122,10 @@ export default {
       file2: "",
       uploadProgress: 0,
       file3: "",
+      file4 : "",
+      selectFiles : [
+        
+      ]
     };
   },
   methods: {
@@ -243,12 +274,100 @@ export default {
         };
         oFileReader.readAsDataURL(file);
       })
+    },
+
+    //方法做的事情： 拉起选择文件弹窗
+    selectFile4(){
+      let dragFile = document.getElementById("drag_file")
+      dragFile.click()
+    },
+    //方法做的事情： 获取选择上传的文件
+    getFile4(event){
+      this.file4 = event.target.files["0"]
+      if(!this.file4) return
+      this.ruleFile(this.file4)
+    },
+    //方法做的事情： 获取到拖拽上传的文件信息
+    dropGetFile(event){
+      this.file4 = event.dataTransfer.files["0"]
+      if(!this.file4) return
+      this.ruleFile(this.file4 )
+    },
+    //方法做的事情： 对点击上传以及拖拽上传的文件进行大小限制以及类型限制
+    async ruleFile(file){
+      //限制上传文件的大小
+      if(file.size > 2 * 1024 * 1024){
+        this.$message.warning("上传的文件不能超过2MB~~")
+        return
+      }
+      //限制上传文件的类型
+      let type = file.type;
+      if(!/(png|jpg|jpeg|gif)/i.test(type)){
+        this.$message.warning("上传的文件只能是 PNG/JPG/JPEG 格式的~~")
+        return
+      }
+
+      //1. 把上传的文件转化成FormData类型的数据
+      let formData = new FormData()
+      formData.append("file",file)
+      formData.append("filename",file.name)
+      //2. 发送请求，开始上传
+      const res = await uploadSingle(formData)
+      if(res.data.code == 0){
+        this.$message.success("文件上传成功")
+        this.file4 = ""
+      }
+    },
+
+
+    //方法做的事情: 删除所选择的文件
+    handleRemoveFile(index){
+      this.selectFiles.splice(index,1)
+    },
+    //方法做的事情： 拉起选择文件弹窗
+    selectFile5(){
+     let multipleFile= document.getElementById("multiple_file")
+      multipleFile.click()
+    },
+    //方法做的事情： 获取选择上传的文件
+    getFile5(event){
+      this.selectFiles = Array.from(event.target.files)
+    },
+    //方法做的事情： 将数组所有的文件上传到服务器
+    async uploadFile5(){
+      if(this.selectFiles.length <= 0){
+        this.$message.warning("请选择要上传的文件")
+      }
+
+      let result = this.selectFiles.map(async (item)=>{
+
+        if(item.size > 2 * 1024 * 1024){
+          this.$message.warning("上传的文件不能超过2MB~~")
+          return
+        }
+
+        let formData = new FormData()
+        formData.append("file",item)
+        formData.append("filename",item.name)
+        return uploadSingle(formData);
+      })
+
+      Promise.all(result).then(()=>{
+        this.$message.success("恭喜您，所有文件都上传成功~~")
+      }).catch(()=>{
+        this.$message.warning("很遗憾，上传过程中出现问题，请您稍后再试~~")
+      }).finally(()=>{
+        this.selectFiles = []
+      })
+
+
     }
   },
 };
 </script>
 
 <style scoped>
+*{margin: 0; padding: 0;}
 .upload_container {
   padding: 40px;
 }
@@ -349,5 +468,37 @@ export default {
 }
 .upload_ipu3 {
   display: none;
+}
+.upload_center{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.mt5{
+  margin-top:5px;
+}
+.click_upload{
+  color : blueviolet;
+  cursor: pointer;
+}
+.select5{
+  background: #409eff;
+}
+.upload5{
+  background: #67c23a;
+}
+ul{
+  list-style: none;
+  margin-top:10px;
+}
+ul li {
+  font-size:12px;
+  color : #ddd;
+  line-height: 30px;
+}
+ul li span{
+  cursor: pointer;
+  color: green;
 }
 </style>

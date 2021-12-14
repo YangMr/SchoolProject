@@ -16,7 +16,7 @@ export const uploadSingle = (fileData, callback) => {
     onUploadProgress: function (progressEvent) {
       const loaded = progressEvent.loaded;
       const total = progressEvent.total;
-      callback(loaded, total);
+      callback && callback(loaded, total);
     },
     data: fileData,
   });
